@@ -516,7 +516,7 @@ export function CategoriesView({
       {editingCategory && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs" onClick={() => setEditingCategory(null)} />
-          <div className="relative bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-150">
+          <div className="relative bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h3 className="text-base font-extrabold text-slate-900">
                 Edit Categoory
@@ -608,7 +608,7 @@ export function CategoriesView({
       {editingGroup && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs" onClick={() => setEditingGroup(null)} />
-          <div className="relative bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-150">
+          <div className="relative bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h3 className="text-base font-extrabold text-slate-900">
                 Edit Asset Group

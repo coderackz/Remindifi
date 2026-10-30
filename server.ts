@@ -13,7 +13,17 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-app.use(express.json({ limit: '15mb' }));
+// Security Middleware: HTTP Hardening Headers (allowing iframe embedding for preview/embeds)
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
+// Request body limiter to protect against oversized payload Denial of Service (DoS)
+app.use(express.json({ limit: '10mb' }));
 
 // Shared Gemini Client
 const ai = new GoogleGenAI({
@@ -35,7 +45,11 @@ interface ScanRequestBody {
 // Endpoint: AI Document Scanner for Permits / Licenses
 app.post('/api/gemini/scan-permit', async (req: Request<{}, {}, ScanRequestBody>, res: Response) => {
   try {
-    const { imageBase64, mimeType = 'image/png', fileName, sampleType } = req.body;
+    const { imageBase64, mimeType = 'image/png', fileName, sampleType } = req.body || {};
+
+    // Input Validation: Validate mimeType if provided
+    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'application/pdf'];
+    const safeMimeType = allowedMimeTypes.includes(mimeType) ? mimeType : 'image/png';
 
     // Check if we should use sample document presets for instant reliable testing
     if (sampleType) {
@@ -86,6 +100,9 @@ app.post('/api/gemini/scan-permit', async (req: Request<{}, {}, ScanRequestBody>
 
     // If actual image data is provided and GEMINI_API_KEY is present
     if (imageBase64 && process.env.GEMINI_API_KEY) {
+      if (typeof imageBase64 !== 'string' || imageBase64.length > 10_000_000) {
+        return res.status(400).json({ success: false, error: 'Payload exceeds acceptable size limit.' });
+      }
       const cleanBase64 = imageBase64.replace(/^data:[^;]+;base64,/, '');
 
       const prompt = `Analyze this permit, license, registration card, or compliance certificate document.
@@ -105,7 +122,7 @@ Return only JSON matching the schema.`;
           parts: [
             {
               inlineData: {
-                mimeType: mimeType || 'image/png',
+                mimeType: safeMimeType,
                 data: cleanBase64,
               },
             },

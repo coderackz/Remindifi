@@ -78,38 +78,38 @@ export function TopNavBar({
   };
 
   return (
-    <header className="bg-white/30 backdrop-blur-md border-b border-white/50 px-6 lg:px-10 py-4 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-xs transition-all">
+    <header className="bg-white/40 backdrop-blur-md border-b border-white/50 px-3 sm:px-6 lg:px-10 py-2.5 sm:py-4 flex items-center justify-between gap-2 sm:gap-4 sticky top-0 z-30 shadow-xs transition-all">
       {/* 1. Selector 1: remindifi Clean Minimalist Typographic Logo */}
       <div
         onClick={() => onSelectTab('dashboard')}
-        className="flex items-center gap-2.5 cursor-pointer select-none group shrink-0"
+        className="flex items-center gap-2 sm:gap-2.5 cursor-pointer select-none group shrink-0"
         title="remindifi"
       >
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#5E5CE6] to-[#7B79FF] text-white flex items-center justify-center font-black text-base shadow-sm group-hover:scale-105 group-hover:shadow-[#5E5CE6]/30 transition-all">
+        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-[#5E5CE6] to-[#7B79FF] text-white flex items-center justify-center font-black text-sm sm:text-base shadow-sm group-hover:scale-105 group-hover:shadow-[#5E5CE6]/30 transition-all">
           <span className="tracking-tighter">r</span>
         </div>
         <div className="flex items-baseline">
-          <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 group-hover:text-[#5E5CE6] transition-colors leading-none">
+          <span className="text-lg sm:text-2xl font-black tracking-tight text-slate-900 group-hover:text-[#5E5CE6] transition-colors leading-none">
             remindi<span className="text-[#5E5CE6]">fi</span>
           </span>
-          <span className="w-1.5 h-1.5 rounded-full bg-[#5E5CE6] ml-1 self-end mb-1 inline-block" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#5E5CE6] ml-0.5 sm:ml-1 self-end mb-1 inline-block" />
         </div>
       </div>
 
       {/* Central Pill Search Bar */}
-      <div className="flex-1 max-w-md mx-2 relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+      <div className="flex-1 min-w-[90px] max-w-xs sm:max-w-md mx-1 sm:mx-2 relative">
+        <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search permits, plate # or type command..."
-          className="w-full bg-white/90 backdrop-blur-sm border border-slate-200/90 rounded-full pl-11 pr-4 py-2.5 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5E5CE6]/30 focus:border-[#5E5CE6] transition-all shadow-xs"
+          placeholder="Search permits, plate #..."
+          className="w-full bg-white/90 backdrop-blur-sm border border-slate-200/90 rounded-full pl-8 sm:pl-11 pr-3 sm:pr-4 py-1.5 sm:py-2.5 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5E5CE6]/30 focus:border-[#5E5CE6] transition-all shadow-xs"
         />
       </div>
 
       {/* Right Controls Bar */}
-      <div className="flex items-center gap-3 shrink-0 relative">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 relative">
         {/* Light / Dark Mode Toggle Pill */}
         <div className="hidden sm:flex items-center bg-white/90 border border-slate-200/90 rounded-full p-1 shadow-xs">
           <button
@@ -159,7 +159,7 @@ export function TopNavBar({
 
         {/* Dropdown Notification Style */}
         {showNotificationsDropdown && (
-          <div className="absolute right-0 top-12 w-80 sm:w-96 bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="absolute right-0 top-12 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
             {/* Dropdown Header */}
             <div className="p-4 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -299,10 +299,11 @@ export function TopNavBar({
         {role !== 'viewer' && (
           <button
             onClick={onOpenAddPermit}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#1E1B4B] hover:bg-[#2A2468] text-white text-xs font-extrabold shadow-md shadow-slate-900/10 hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#1E1B4B] hover:bg-[#2A2468] text-white text-xs font-extrabold shadow-md shadow-slate-900/10 hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            title="Add New Permit"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>Add Permit</span>
+            <span className="hidden sm:inline">Add Permit</span>
           </button>
         )}
 

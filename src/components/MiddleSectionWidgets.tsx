@@ -36,7 +36,7 @@ interface MiddleSectionWidgetsProps {
   onEditPermit: (permit: Permit) => void;
   onOpenQuickAdd: () => void;
   onSelectAsset: (assetId: string) => void;
-  onNavigateTab?: (tab: 'dashboard' | 'all_reminders' | 'categories' | 'notifications' | 'email_templates' | 'settings') => void;
+  onNavigateTab?: (tab: 'dashboard' | 'all_reminders' | 'calendar' | 'categories' | 'notifications' | 'email_templates' | 'settings') => void;
   onViewCalendar?: () => void;
 }
 

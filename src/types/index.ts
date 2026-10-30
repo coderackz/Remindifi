@@ -123,6 +123,9 @@ export interface TeamMember {
   department: string;
   addedAt: string;
   avatar: string;
+  jobTitle?: string;
+  phone?: string;
+  status?: 'active' | 'suspended';
 }
 
 export interface EmailTemplate {

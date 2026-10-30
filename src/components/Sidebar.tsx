@@ -2,6 +2,7 @@ import React from 'react';
 import {
   LayoutDashboard,
   FileText,
+  Calendar,
   Layers,
   Mail,
   Palette,
@@ -29,6 +30,11 @@ export function Sidebar({ currentTab, onSelectTab, role, unreadAlertsCount }: Si
       id: 'all_reminders',
       label: 'All Reminders Catalog',
       icon: FileText,
+    },
+    {
+      id: 'calendar',
+      label: 'Renewal Calendar',
+      icon: Calendar,
     },
     {
       id: 'categories',

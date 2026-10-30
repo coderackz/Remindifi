@@ -75,18 +75,37 @@ import {
 export type AppTab =
   | 'dashboard'
   | 'all_reminders'
+  | 'calendar'
   | 'categories'
   | 'notifications'
   | 'email_templates'
   | 'settings';
 
 export default function App() {
-  // Authentication State
-  const [currentUser, setCurrentUser] = useState<User | null>(DEMO_USERS[0]);
+  // Authentication State: Landing page defaults directly to Login Screen
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    try {
+      const saved = sessionStorage.getItem('remindifi_active_session');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch {
+      // Storage unavailable or disabled
+    }
+    return null;
+  });
 
   // Navigation & Role State
   const [currentTab, setCurrentTab] = useState<AppTab>('dashboard');
-  const [role, setRole] = useState<Role>('admin');
+  const [role, setRole] = useState<Role>(() => {
+    try {
+      const saved = sessionStorage.getItem('remindifi_active_session');
+      if (saved) {
+        return JSON.parse(saved).role || 'admin';
+      }
+    } catch {}
+    return 'admin';
+  });
 
   // Core Relational Data State
   const [assetGroups, setAssetGroups] = useState<AssetGroup[]>(INITIAL_ASSET_GROUPS);
@@ -359,24 +378,46 @@ export default function App() {
   };
 
   const handleExportData = () => {
-    const headers = ['Permit ID', 'Asset Identifier', 'Category', 'Authority', 'Permit #', 'Issue Date', 'Expiry Date', 'Cost AED', 'Status'];
+    // Security Patch: Prevent CSV Formula Injection (CWE-1236)
+    const sanitizeCsvCell = (val: string | number | undefined | null): string => {
+      if (val === undefined || val === null) return '""';
+      let str = String(val).trim();
+      // If cell begins with unsafe spreadsheet formula characters (=, +, -, @, tab, CR)
+      if (/^[=\+\-@\t\r]/.test(str)) {
+        str = `'${str}`;
+      }
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
+    const headers = [
+      'Permit ID',
+      'Asset Identifier',
+      'Category',
+      'Authority',
+      'Permit #',
+      'Issue Date',
+      'Expiry Date',
+      'Cost AED',
+      'Status',
+    ].map(sanitizeCsvCell);
+
     const rows = permits.map((p) => {
       const asset = assetMap.get(p.assetId);
       const cat = categoryMap.get(p.categoryId);
       return [
-        p.id,
-        asset?.identifier || '',
-        cat?.name || '',
-        cat?.issuingAuthority || '',
-        p.permitNumber,
-        p.issueDate,
-        p.expiryDate,
-        p.cost,
-        p.status,
+        sanitizeCsvCell(p.id),
+        sanitizeCsvCell(asset?.identifier || ''),
+        sanitizeCsvCell(cat?.name || ''),
+        sanitizeCsvCell(cat?.issuingAuthority || ''),
+        sanitizeCsvCell(p.permitNumber),
+        sanitizeCsvCell(p.issueDate),
+        sanitizeCsvCell(p.expiryDate),
+        sanitizeCsvCell(p.cost),
+        sanitizeCsvCell(p.status),
       ].join(',');
     });
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
@@ -390,15 +431,19 @@ export default function App() {
   const handleRoleChange = (newRole: Role) => {
     setRole(newRole);
     if (currentUser) {
-      setCurrentUser({
+      const updatedUser = {
         ...currentUser,
         role: newRole,
-      });
+      };
+      setCurrentUser(updatedUser);
+      try {
+        sessionStorage.setItem('remindifi_active_session', JSON.stringify(updatedUser));
+      } catch {}
     }
   };
 
   // ---------------------------------------------------------------------------
-  // AUTH GUARD: If not logged in, show Login Screen
+  // AUTH GUARD: If not logged in, show Login Screen (Landing Page)
   // ---------------------------------------------------------------------------
   if (!currentUser) {
     return (
@@ -406,14 +451,17 @@ export default function App() {
         onLogin={(user) => {
           setCurrentUser(user);
           setRole(user.role);
+          try {
+            sessionStorage.setItem('remindifi_active_session', JSON.stringify(user));
+          } catch {}
         }}
       />
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#EDEBF8] text-[#1E244B] flex flex-row">
-      {/* 1. Left Curved Indigo/Violet Sidebar (Exact match to reference design) */}
+    <div className="min-h-screen bg-[#EDEBF8] text-[#1E244B] flex flex-col md:flex-row">
+      {/* 1. Left Curved Indigo/Violet Sidebar (Exact match to reference design on desktop, docked bottom bar on mobile) */}
       <CurvedSidebar
         currentTab={currentTab}
         onSelectTab={(tab) => setCurrentTab(tab as AppTab)}
@@ -431,7 +479,12 @@ export default function App() {
           onSearchChange={setSearchQuery}
           role={role}
           currentUser={currentUser}
-          onSignOut={() => setCurrentUser(null)}
+          onSignOut={() => {
+            try {
+              sessionStorage.removeItem('remindifi_active_session');
+            } catch {}
+            setCurrentUser(null);
+          }}
           onOpenAddPermit={() => handleOpenAttachPermit()}
           onExportData={handleExportData}
           unreadCount={metrics.criticalCount}
@@ -439,8 +492,8 @@ export default function App() {
           onClearNotifications={() => setNotificationLogs([])}
         />
 
-        {/* Content Body - Increased top margin for elegant breathing space */}
-        <main className="mt-8 sm:mt-10 px-6 lg:px-10 pb-12 space-y-8 max-w-[1500px] w-full mx-auto">
+        {/* Content Body - Responsive margins and bottom padding for mobile safe area */}
+        <main className="mt-4 sm:mt-8 lg:mt-10 px-3 sm:px-6 lg:px-10 pb-28 md:pb-12 space-y-6 sm:space-y-8 max-w-[1500px] w-full mx-auto">
           {/* ================================================================= */}
           {/* TAB: DASHBOARD (EXACT REFERENCE DESIGN WIDGETS + QUEUE)           */}
           {/* ================================================================= */}
@@ -470,7 +523,7 @@ export default function App() {
                 onOpenQuickAdd={() => setIsQuickAddOpen(true)}
                 onSelectAsset={(id) => setDrawerAssetId(id)}
                 onNavigateTab={(tab) => setCurrentTab(tab)}
-                onViewCalendar={() => setCurrentTab('all_reminders')}
+                onViewCalendar={() => setCurrentTab('calendar')}
               />
 
               {/* 3. Bottom Section: Upcoming Renewals + Email Templates Action Widget + Gauges & Inspection */}
@@ -486,6 +539,21 @@ export default function App() {
                 onSelectAsset={(id) => setDrawerAssetId(id)}
               />
             </div>
+          )}
+
+          {/* ================================================================= */}
+          {/* TAB: RENEWAL CALENDAR (INTERACTIVE TIMELINE & MONTH MATRIX)       */}
+          {/* ================================================================= */}
+          {currentTab === 'calendar' && (
+            <RenewalCalendar
+              permits={permits}
+              assets={assets}
+              categories={categories}
+              role={role}
+              onOpenAssetDrawer={setDrawerAssetId}
+              onOpenLogRenewal={setLogRenewalPermitId}
+              onOpenDocViewer={setViewingDocPermit}
+            />
           )}
 
           {/* ================================================================= */}
@@ -548,9 +616,12 @@ export default function App() {
 
           {/* ================================================================= */}
           {/* TAB: SETTINGS (RBAC PERMISSIONS MATRIX & SMTP SERVER CONFIG)     */}
-          {/* ================================================================= */}
           {currentTab === 'settings' && (
-            <SettingsView role={role} onRoleChange={handleRoleChange} />
+            <SettingsView
+              role={role}
+              onRoleChange={handleRoleChange}
+              onNavigateToDashboard={() => setCurrentTab('dashboard')}
+            />
           )}
         </main>
       </div>

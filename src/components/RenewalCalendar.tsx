@@ -332,18 +332,18 @@ export function RenewalCalendar({
       {/* Main Grid: Calendar on Left (7 cols), Events Inspector on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Calendar Grid Container (7 cols) */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
+        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 p-2.5 sm:p-4 shadow-2xs">
           {/* Weekday Labels (Mon - Sun) */}
           <div className="grid grid-cols-7 gap-1 text-center mb-2">
             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-              <div key={day} className="text-[11px] font-bold text-slate-400 py-1 uppercase tracking-wider">
+              <div key={day} className="text-[10px] sm:text-[11px] font-bold text-slate-400 py-1 uppercase tracking-wider">
                 {day}
               </div>
             ))}
           </div>
 
           {/* Calendar Day Cells */}
-          <div className="grid grid-cols-7 gap-1.5">
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
             {calendarDays.map((day) => {
               const isSelected = day.dateStr === selectedDateKey;
               const hasEvents = day.permits.length > 0;
@@ -362,7 +362,7 @@ export function RenewalCalendar({
                 <button
                   key={day.dateStr}
                   onClick={() => setSelectedDateKey(day.dateStr)}
-                  className={`min-h-16 md:min-h-18 p-1.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer relative group ${
+                  className={`min-h-12 sm:min-h-16 md:min-h-18 p-1 sm:p-1.5 rounded-lg sm:rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer relative group ${
                     isSelected
                       ? 'border-[#5E5CE6] ring-2 ring-[#5E5CE6]/30 bg-[#5E5CE6]/5 shadow-xs'
                       : day.isCurrentMonth

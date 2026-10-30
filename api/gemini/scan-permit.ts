@@ -11,15 +11,21 @@ interface ServerlessResponse {
   setHeader: (name: string, value: string) => void;
 }
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || '',
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    },
-  },
-});
+// Lazy Gemini Client Initialization (Only if key exists)
+let aiClient: GoogleGenAI | null = null;
+function getAiClient(): GoogleGenAI | null {
+  if (!aiClient && process.env.GEMINI_API_KEY) {
+    aiClient = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
+  }
+  return aiClient;
+}
 
 export default async function handler(req: ServerlessRequest, res: ServerlessResponse) {
   // Security Headers
@@ -84,8 +90,8 @@ export default async function handler(req: ServerlessRequest, res: ServerlessRes
       }
     }
 
-    // 2. Gemini Multimodal Extraction if key & image provided
-    if (imageBase64 && process.env.GEMINI_API_KEY) {
+    const ai = getAiClient();
+    if (imageBase64 && ai) {
       if (typeof imageBase64 !== 'string' || imageBase64.length > 10_000_000) {
         return res.status(400).json({ success: false, error: 'Payload exceeds acceptable size limit.' });
       }

@@ -25,15 +25,21 @@ app.use((_req, res, next) => {
 // Request body limiter to protect against oversized payload Denial of Service (DoS)
 app.use(express.json({ limit: '10mb' }));
 
-// Shared Gemini Client
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || '',
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    },
-  },
-});
+// Lazy Gemini Client
+let aiClient: GoogleGenAI | null = null;
+function getAiClient(): GoogleGenAI | null {
+  if (!aiClient && process.env.GEMINI_API_KEY) {
+    aiClient = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
+  }
+  return aiClient;
+}
 
 interface ScanRequestBody {
   imageBase64?: string;
@@ -98,8 +104,8 @@ app.post('/api/gemini/scan-permit', async (req: Request<{}, {}, ScanRequestBody>
       }
     }
 
-    // If actual image data is provided and GEMINI_API_KEY is present
-    if (imageBase64 && process.env.GEMINI_API_KEY) {
+    const ai = getAiClient();
+    if (imageBase64 && ai) {
       if (typeof imageBase64 !== 'string' || imageBase64.length > 10_000_000) {
         return res.status(400).json({ success: false, error: 'Payload exceeds acceptable size limit.' });
       }

@@ -32,7 +32,7 @@ export function Sidebar({ currentTab, onSelectTab, role, unreadAlertsCount }: Si
     },
     {
       id: 'categories',
-      label: 'Categoory & Groups',
+      label: 'Categories & Groups',
       icon: Layers,
       adminOnly: true,
     },

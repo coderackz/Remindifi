@@ -112,6 +112,7 @@ export default function App() {
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [logRenewalPermitId, setLogRenewalPermitId] = useState<string | null>(null);
   const [viewingDocPermit, setViewingDocPermit] = useState<Permit | null>(null);
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
 
   // Computed Metrics
   const metrics = useMemo(() => calculateFleetMetrics(permits), [permits]);
@@ -434,10 +435,12 @@ export default function App() {
           onOpenAddPermit={() => handleOpenAttachPermit()}
           onExportData={handleExportData}
           unreadCount={metrics.criticalCount}
+          notifications={notificationLogs}
+          onClearNotifications={() => setNotificationLogs([])}
         />
 
-        {/* Content Body */}
-        <main className="px-6 lg:px-10 pb-10 space-y-6 max-w-[1500px] w-full mx-auto">
+        {/* Content Body - Increased top margin for elegant breathing space */}
+        <main className="mt-8 sm:mt-10 px-6 lg:px-10 pb-12 space-y-8 max-w-[1500px] w-full mx-auto">
           {/* ================================================================= */}
           {/* TAB: DASHBOARD (EXACT REFERENCE DESIGN WIDGETS + QUEUE)           */}
           {/* ================================================================= */}
@@ -451,6 +454,8 @@ export default function App() {
                 onOpenAddPermit={() => handleOpenAttachPermit()}
                 onExportData={handleExportData}
                 urgentCount={metrics.criticalCount + metrics.expiredCount}
+                annualBudget={metrics.totalSpend}
+                onViewBudget={() => setIsBudgetModalOpen(true)}
               />
 
               {/* 2. Middle Section: Urgent Notifications + Assignments + Mini Calendar Timeline */}
@@ -638,6 +643,90 @@ export default function App() {
           categories={categories}
           onClose={() => setViewingDocPermit(null)}
         />
+      )}
+
+      {/* 8. Annual Budget Modal */}
+      {isBudgetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-[28px] max-w-xl w-full p-6 shadow-2xl border border-slate-100 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#5E5CE6]/10 text-[#5E5CE6] flex items-center justify-center font-black">
+                  <Coins className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Annual Compliance Budget</h3>
+                  <p className="text-xs text-slate-400 font-medium">Permit renewal costs & department allocations</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBudgetModalOpen(false)}
+                className="w-8 h-8 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-sm font-bold cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-[#FAF9FF] border border-[#5E5CE6]/15 rounded-2xl p-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Annual Spend</p>
+                <p className="text-2xl font-black text-[#5E5CE6] mt-1">{formatAED(metrics.totalSpend)}</p>
+                <p className="text-[11px] text-slate-500 font-semibold mt-1">
+                  Across {metrics.totalPermits} managed permits
+                </p>
+              </div>
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Average / Renewal</p>
+                <p className="text-2xl font-black text-slate-800 mt-1">
+                  {formatAED(metrics.totalPermits > 0 ? Math.round(metrics.totalSpend / metrics.totalPermits) : 0)}
+                </p>
+                <p className="text-[11px] text-slate-500 font-semibold mt-1">Government & statutory fees</p>
+              </div>
+            </div>
+
+            {/* Category breakdown */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Spend by Permit Category</h4>
+              <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                {categories.map((cat) => {
+                  const catPermits = permits.filter((p) => p.categoryId === cat.id);
+                  const catSpend = catPermits.reduce((acc, p) => acc + (p.cost || 0), 0);
+                  const pct = metrics.totalSpend > 0 ? Math.round((catSpend / metrics.totalSpend) * 100) : 0;
+                  return (
+                    <div key={cat.id} className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-bold text-slate-800">{cat.name}</div>
+                        <div className="text-[10px] text-slate-400 font-medium">{cat.issuingAuthority} • {catPermits.length} permits</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-extrabold text-slate-900">{formatAED(catSpend)}</div>
+                        <div className="text-[10px] font-bold text-[#5E5CE6]">{pct}% of budget</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  setIsBudgetModalOpen(false);
+                  handleExportData();
+                }}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+              >
+                Export Budget Ledger (.xls)
+              </button>
+              <button
+                onClick={() => setIsBudgetModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-[#1E1B4B] hover:bg-[#2C276E] text-white text-xs font-bold cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

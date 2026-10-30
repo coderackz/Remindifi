@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Search,
   Sun,
@@ -12,9 +12,14 @@ import {
   Shield,
   UserCheck,
   Eye,
-  FileSpreadsheet,
+  CheckCheck,
+  AlertCircle,
+  Clock,
+  ArrowRight,
+  X,
+  BellRing,
 } from 'lucide-react';
-import { Role, User } from '../types';
+import { Role, User, NotificationLog } from '../types';
 
 interface TopNavBarProps {
   currentTab: string;
@@ -27,6 +32,8 @@ interface TopNavBarProps {
   onOpenAddPermit: () => void;
   onExportData: () => void;
   unreadCount: number;
+  notifications?: NotificationLog[];
+  onClearNotifications?: () => void;
 }
 
 export function TopNavBar({
@@ -40,55 +47,56 @@ export function TopNavBar({
   onOpenAddPermit,
   onExportData,
   unreadCount,
+  notifications = [],
+  onClearNotifications,
 }: TopNavBarProps) {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const [clearedLocally, setClearedLocally] = useState(false);
+
+  const effectiveUnreadCount = clearedLocally ? 0 : unreadCount;
+
+  // Close dropdowns on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowNotificationsDropdown(false);
+        setShowUserDropdown(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleClearAll = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setClearedLocally(true);
+    if (onClearNotifications) {
+      onClearNotifications();
+    }
+  };
 
   return (
-    <header className="bg-transparent px-6 lg:px-10 py-5 flex items-center justify-between gap-4 sticky top-0 z-20">
-      {/* Left Navigation Tabs (matching Dashboard / Workflows / Integrations in reference) */}
-      <div className="flex items-center gap-6 lg:gap-8 shrink-0">
-        <button
-          onClick={() => onSelectTab('dashboard')}
-          className={`flex items-center gap-2 text-sm font-extrabold tracking-tight transition-all cursor-pointer relative py-1 ${
-            currentTab === 'dashboard'
-              ? 'text-slate-900 border-b-2 border-[#5E5CE6]'
-              : 'text-slate-400 hover:text-slate-700'
-          }`}
-        >
-          <div className="grid grid-cols-2 gap-0.5 w-3.5 h-3.5">
-            <span className={`w-1.5 h-1.5 rounded-[1px] ${currentTab === 'dashboard' ? 'bg-[#5E5CE6]' : 'bg-slate-400'}`} />
-            <span className={`w-1.5 h-1.5 rounded-[1px] ${currentTab === 'dashboard' ? 'bg-[#5E5CE6]' : 'bg-slate-400'}`} />
-            <span className={`w-1.5 h-1.5 rounded-[1px] ${currentTab === 'dashboard' ? 'bg-[#5E5CE6]' : 'bg-slate-400'}`} />
-            <span className={`w-1.5 h-1.5 rounded-[1px] ${currentTab === 'dashboard' ? 'bg-[#5E5CE6]' : 'bg-slate-400'}`} />
-          </div>
-          <span>Dashboard</span>
-        </button>
-
-        <button
-          onClick={() => onSelectTab('all_reminders')}
-          className={`flex items-center gap-2 text-sm font-bold tracking-tight transition-all cursor-pointer relative py-1 ${
-            currentTab === 'all_reminders'
-              ? 'text-slate-900 border-b-2 border-[#5E5CE6]'
-              : 'text-slate-400 hover:text-slate-700'
-          }`}
-        >
-          <span>All Reminders</span>
-        </button>
-
-        <button
-          onClick={() => onSelectTab('categories')}
-          className={`hidden md:flex items-center gap-2 text-sm font-bold tracking-tight transition-all cursor-pointer relative py-1 ${
-            currentTab === 'categories'
-              ? 'text-slate-900 border-b-2 border-[#5E5CE6]'
-              : 'text-slate-400 hover:text-slate-700'
-          }`}
-        >
-          <span>Categories</span>
-        </button>
+    <header className="bg-white/30 backdrop-blur-md border-b border-white/50 px-6 lg:px-10 py-4 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-xs transition-all">
+      {/* 1. Selector 1: remindifi Clean Minimalist Typographic Logo */}
+      <div
+        onClick={() => onSelectTab('dashboard')}
+        className="flex items-center gap-2.5 cursor-pointer select-none group shrink-0"
+        title="remindifi"
+      >
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#5E5CE6] to-[#7B79FF] text-white flex items-center justify-center font-black text-base shadow-sm group-hover:scale-105 group-hover:shadow-[#5E5CE6]/30 transition-all">
+          <span className="tracking-tighter">r</span>
+        </div>
+        <div className="flex items-baseline">
+          <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 group-hover:text-[#5E5CE6] transition-colors leading-none">
+            remindi<span className="text-[#5E5CE6]">fi</span>
+          </span>
+          <span className="w-1.5 h-1.5 rounded-full bg-[#5E5CE6] ml-1 self-end mb-1 inline-block" />
+        </div>
       </div>
 
-      {/* Central Pill Search Bar ("Search or type command") */}
+      {/* Central Pill Search Bar */}
       <div className="flex-1 max-w-md mx-2 relative">
         <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input
@@ -101,7 +109,7 @@ export function TopNavBar({
       </div>
 
       {/* Right Controls Bar */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-3 shrink-0 relative">
         {/* Light / Dark Mode Toggle Pill */}
         <div className="hidden sm:flex items-center bg-white/90 border border-slate-200/90 rounded-full p-1 shadow-xs">
           <button
@@ -128,17 +136,142 @@ export function TopNavBar({
           </button>
         </div>
 
-        {/* Notifications Bell */}
+        {/* Selector 6: Notifications Bell Button */}
         <button
-          onClick={() => onSelectTab('notifications')}
-          className="relative w-9 h-9 rounded-full bg-white border border-slate-200/90 flex items-center justify-center text-slate-600 hover:text-[#5E5CE6] hover:border-[#5E5CE6]/40 transition-all shadow-xs cursor-pointer"
+          onClick={() => {
+            setShowNotificationsDropdown((prev) => !prev);
+            setShowUserDropdown(false);
+          }}
+          className={`relative w-9 h-9 rounded-full border flex items-center justify-center transition-all shadow-xs cursor-pointer ${
+            showNotificationsDropdown
+              ? 'bg-[#5E5CE6] text-white border-[#5E5CE6] ring-2 ring-[#5E5CE6]/30'
+              : 'bg-white border-slate-200/90 text-slate-600 hover:text-[#5E5CE6] hover:border-[#5E5CE6]/40'
+          }`}
           title="Alerts and Notifications"
         >
           <Bell className="w-4 h-4" />
-          {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white" />
+          {effectiveUnreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-white shadow-xs">
+              {effectiveUnreadCount}
+            </span>
           )}
         </button>
+
+        {/* Dropdown Notification Style */}
+        {showNotificationsDropdown && (
+          <div className="absolute right-0 top-12 w-80 sm:w-96 bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+            {/* Dropdown Header */}
+            <div className="p-4 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BellRing className="w-4 h-4 text-[#5E5CE6]" />
+                <span className="text-xs font-black text-slate-900 tracking-tight">
+                  Notifications
+                </span>
+                {effectiveUnreadCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-extrabold">
+                    {effectiveUnreadCount} unread
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {effectiveUnreadCount > 0 && (
+                  <button
+                    onClick={handleClearAll}
+                    className="text-[11px] font-bold text-[#5E5CE6] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <CheckCheck className="w-3 h-3" />
+                    Mark all read
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowNotificationsDropdown(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Notification Items List */}
+            <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+              {notifications.length > 0 ? (
+                notifications.slice(0, 5).map((log) => {
+                  const isCritical = log.milestoneDays <= 7;
+                  return (
+                    <div
+                      key={log.id}
+                      onClick={() => {
+                        setShowNotificationsDropdown(false);
+                        onSelectTab('notifications');
+                      }}
+                      className="p-3.5 hover:bg-slate-50/90 transition-colors cursor-pointer group flex items-start gap-3"
+                    >
+                      <div
+                        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                          isCritical
+                            ? 'bg-rose-100 text-rose-600'
+                            : 'bg-amber-100 text-amber-600'
+                        }`}
+                      >
+                        <AlertCircle className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                          <span className="text-xs font-bold text-slate-900 group-hover:text-[#5E5CE6] transition-colors truncate">
+                            {log.assetIdentifier}
+                          </span>
+                          <span
+                            className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase shrink-0 ${
+                              isCritical
+                                ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                                : 'bg-amber-50 text-amber-600 border border-amber-200'
+                            }`}
+                          >
+                            {log.milestoneDays}d left
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium line-clamp-2 leading-relaxed">
+                          {log.digestSubject || `Milestone alert for ${log.assetIdentifier}`}
+                        </p>
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-semibold mt-1">
+                          <Clock className="w-3 h-3" />
+                          <span>Sent to {log.recipientEmail.split('@')[0]}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-8 text-center">
+                  <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2">
+                    <CheckCheck className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-bold text-slate-800">All caught up!</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    No pending critical compliance alerts.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Dropdown Footer Action */}
+            <div className="p-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[10px] font-medium text-slate-400">
+                Daily cron triggers at 08:00 GST
+              </span>
+              <button
+                onClick={() => {
+                  setShowNotificationsDropdown(false);
+                  onSelectTab('notifications');
+                }}
+                className="text-xs font-bold text-[#5E5CE6] hover:text-[#4B49C8] flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <span>View All</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Settings Gear */}
         <button
@@ -162,7 +295,7 @@ export function TopNavBar({
           </span>
         </button>
 
-        {/* Add Permit / New Board Action Pill Button */}
+        {/* Add Permit Action Pill Button */}
         {role !== 'viewer' && (
           <button
             onClick={onOpenAddPermit}
@@ -177,7 +310,10 @@ export function TopNavBar({
         {currentUser && (
           <div className="relative">
             <button
-              onClick={() => setShowUserDropdown(!showUserDropdown)}
+              onClick={() => {
+                setShowUserDropdown(!showUserDropdown);
+                setShowNotificationsDropdown(false);
+              }}
               className="flex items-center gap-1.5 p-1 rounded-full hover:bg-white border border-transparent hover:border-slate-200 transition-all cursor-pointer"
             >
               <img
